@@ -1,17 +1,14 @@
 import dotenv from "dotenv";
-import express, { type Request, type Response } from "express";
+import express from "express";
+import routes from "./routes/index.js";
 
 dotenv.config();
 const app = express();
+const PORT = process.env.PORT || 4000;
 
-const PORT = process.env.PORT;
-
-app.get("/", (request: Request, response: Response) => {
-	response.status(200).send("Hello Woraldaasa!");
-});
+app.use(express.json());
+app.use("/api", routes);
 
 app.listen(PORT, () => {
-	console.log("Server running at PORT: ", PORT);
-}).on("error", (error) => {
-	throw new Error(error.message);
+	console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
