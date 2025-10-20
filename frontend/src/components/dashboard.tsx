@@ -37,7 +37,7 @@ export default function Dashboard() {
 
 	const logoutUser = () => {
 		logout();
-		router.push("/login");
+		router.push("/");
 	};
 
 	const handleDragStart = (task: Task) => {
@@ -109,7 +109,7 @@ export default function Dashboard() {
 	}
 
 	return (
-		<section suppressHydrationWarning className="min-h-screen p-8">
+		<section suppressHydrationWarning className="min-h-screen px-8">
 			<div className="max-w-7xl mx-auto">
 				<div className="flex justify-between items-center mb-8">
 					<h1 className="text-3xl font-bold">Kanban Dashboard</h1>
