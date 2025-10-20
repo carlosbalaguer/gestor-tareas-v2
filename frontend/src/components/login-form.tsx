@@ -40,13 +40,10 @@ export function LoginForm({
 
 	const loginUser = async () => {
 		setIsRegistering(true);
-		console.log(email, password);
 
 		try {
 			const response = await login(email, password);
-			console.log("Response from login:", response);
 			if (response.data.token) {
-				console.log("Login successful:", response);
 				setAuthToken(response.data.token);
 				router.push("/dashboard");
 			}

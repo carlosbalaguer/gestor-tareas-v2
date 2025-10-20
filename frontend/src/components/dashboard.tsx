@@ -52,7 +52,6 @@ export default function Dashboard() {
 		if (!draggedTask) return;
 
 		try {
-			console.log("Updating task:", draggedTask.id, "to status:", newStatus);
 			await updateTask(
 				draggedTask.id,
 				draggedTask.title,

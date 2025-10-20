@@ -36,14 +36,13 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
 
 	const registerUser = async () => {
 		setIsRegistering(true);
-		console.log(email, password);
 
 		try {
-			const response =await register(email, password);
-      if (response.token) {
-        setAuthToken(response.token);
-        router.push("/dashboard");
-      }
+			const response = await register(email, password);
+			if (response.data.token) {
+				setAuthToken(response.data.token);
+				router.push("/dashboard");
+			}
 		} catch (error) {}
 		setIsRegistering(false);
 	};
