@@ -111,7 +111,7 @@ export default function Dashboard() {
 	return (
 		<section suppressHydrationWarning className="min-h-screen px-8">
 			<div className="max-w-7xl mx-auto">
-				<div className="flex justify-between items-center mb-8">
+				<div className="flex justify-between items-center pt-8 mb-8">
 					<h1 className="text-3xl font-bold">Kanban Dashboard</h1>
 					<div className="flex gap-3">
 						<Button onClick={() => setIsModalOpen(true)}>
