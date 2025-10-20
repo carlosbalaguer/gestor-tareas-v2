@@ -83,7 +83,7 @@ export class TasksController {
 		try {
 			const taskId = Number(req.params.taskId);
 			const userId = req.user?.id;
-			const { title, description } = req.body;
+			const { title, description, status } = req.body;
 
 			if (!taskId)
 				return res.status(400).json({
@@ -105,6 +105,7 @@ export class TasksController {
 				taskId,
 				userId,
 				title,
+				status,
 				description || null
 			);
 			res.status(200).json({ success: true, data: task });

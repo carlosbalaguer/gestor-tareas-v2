@@ -72,6 +72,7 @@ export class TasksService {
 		taskId: number,
 		userId: string,
 		title: string,
+		status: string,
 		description: string | null
 	) {
 		if (!taskId) throw new Error("Task ID es obligatorio");
@@ -90,6 +91,7 @@ export class TasksService {
 			data: {
 				title,
 				description,
+				status,
 			},
 		});
 
