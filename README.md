@@ -1,5 +1,5 @@
 ## Live Demo
-Aplicación desplegada: https://gestor-de-tareas-ivory.vercel.app/
+Aplicación desplegada: https://gestor-tareas-v2.vercel.app/
 (Puede tardar un poco en cargar si el backend de Render no ha recibido tráfico recientemente)
 
 ## Instalación
