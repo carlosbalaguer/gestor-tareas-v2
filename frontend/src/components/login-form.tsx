@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,19 +17,30 @@ import {
 import { Input } from "@/components/ui/input";
 import { getAuthToken, login, setAuthToken } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
+import { ApiError } from "@/types";
+import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 
 export function LoginForm({
 	className,
 	...props
 }: React.ComponentProps<"div">) {
 	const router = useRouter();
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
+	const [isLoggingIn, setIsLoggingIn] = useState(false);
+	const [serverError, setServerError] = useState<string>("");
 
-	const [isRegistering, setIsRegistering] = useState(false);
+	const {
+		register: formRegister,
+		handleSubmit,
+		formState: { errors, isValid },
+	} = useForm<LoginFormData>({
+		resolver: zodResolver(loginSchema),
+		mode: "onChange",
+	});
 
 	useEffect(() => {
 		const token = getAuthToken();
@@ -38,19 +49,31 @@ export function LoginForm({
 		}
 	}, [router]);
 
-	const loginUser = async () => {
-		setIsRegistering(true);
+	const onSubmit = async (data: LoginFormData) => {
+		setIsLoggingIn(true);
+		setServerError("");
 
 		try {
-			const response = await login(email, password);
+			const response = await login(data.email, data.password);
 			if (response.data.token) {
 				setAuthToken(response.data.token);
 				router.push("/dashboard");
 			}
 		} catch (error) {
-			alert("Email o contraseña incorrectos");
+			const apiError = error as ApiError;
+
+			let errorMessage = "Ha ocurrido un error. Intenta de nuevo.";
+
+			if (apiError.response?.data?.errors) {
+				errorMessage = apiError.response.data.errors
+					.map((e) => e.message)
+					.join(", ");
+			}
+
+			setServerError(errorMessage);
+		} finally {
+			setIsLoggingIn(false);
 		}
-		setIsRegistering(false);
 	};
 
 	return (
@@ -59,11 +82,12 @@ export function LoginForm({
 				<CardHeader>
 					<CardTitle>Iniciar sesión en tu cuenta</CardTitle>
 					<CardDescription>
-						Ingresa tu correo electrónico a continuación para iniciar sesión en tu cuenta
+						Ingresa tu correo electrónico a continuación para
+						iniciar sesión en tu cuenta
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
-					<form>
+					<form onSubmit={handleSubmit(onSubmit)}>
 						<FieldGroup>
 							<Field>
 								<FieldLabel htmlFor="email">Email</FieldLabel>
@@ -71,10 +95,16 @@ export function LoginForm({
 									id="email"
 									type="email"
 									placeholder="m@ejemplo.com"
-									onChange={(e) => setEmail(e.target.value)}
-									required
+									{...formRegister("email")}
+									aria-invalid={!!errors.email}
 								/>
+								{errors.email && (
+									<p className="text-sm text-red-500 mt-1">
+										{errors.email.message}
+									</p>
+								)}
 							</Field>
+
 							<Field>
 								<div className="flex items-center">
 									<FieldLabel htmlFor="password">
@@ -84,20 +114,30 @@ export function LoginForm({
 								<Input
 									id="password"
 									type="password"
-									onChange={(e) =>
-										setPassword(e.target.value)
-									}
-									required
+									{...formRegister("password")}
+									aria-invalid={!!errors.password}
 								/>
+								{errors.password && (
+									<p className="text-sm text-red-500 mt-1">
+										{errors.password.message}
+									</p>
+								)}
 							</Field>
+
+							{serverError && (
+								<div className="text-sm text-red-500 text-center">
+									{serverError}
+								</div>
+							)}
+
 							<Field>
 								<Button
-									onClick={loginUser}
-									disabled={
-										isRegistering || !email || !password
-									}
+									type="submit"
+									disabled={isLoggingIn || !isValid}
 								>
-									Iniciar sesión
+									{isLoggingIn
+										? "Iniciando sesión..."
+										: "Iniciar sesión"}
 								</Button>
 								<FieldDescription className="text-center">
 									No tienes una cuenta?{" "}

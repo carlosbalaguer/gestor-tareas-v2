@@ -9,7 +9,7 @@ export const registerSchema = z.object({
 
 export const loginSchema = z.object({
 	email: z.email("Email inválido"),
-	password: z.string().min(1, "La contraseña es requerida"),
+	password: z.string().min(6, "La contraseña es requerida"),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

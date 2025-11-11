@@ -1,18 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
-	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { FieldLabel } from "@/components/ui/field";
+import { createTaskSchema, type CreateTaskData } from "@/lib/validations/task";
+import { ApiError } from "@/types";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 interface CreateTaskDialogProps {
 	isOpen: boolean;
@@ -25,22 +28,41 @@ export default function CreateTaskDialog({
 	onClose,
 	onSubmit,
 }: CreateTaskDialogProps) {
-	const [title, setTitle] = useState("");
-	const [description, setDescription] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const [serverError, setServerError] = useState("");
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!title.trim()) return;
+	const {
+		register,
+		handleSubmit,
+		formState: { errors, isValid },
+		reset,
+	} = useForm<CreateTaskData>({
+		resolver: zodResolver(createTaskSchema),
+		mode: "onChange",
+	});
 
+	const onSubmitForm = async (data: CreateTaskData) => {
 		setIsLoading(true);
+		setServerError("");
+
 		try {
-			await onSubmit(title, description);
-			setTitle("");
-			setDescription("");
+			await onSubmit(data.title, data.description || "");
+			reset();
 			onClose();
-		} catch (error) {
-			console.error("Error creating task:", error);
+		} catch (err) {
+			const error = err as ApiError;
+			let errorMessage = "Error al crear la tarea. Intenta de nuevo.";
+
+			if (
+				error.response?.data?.errors &&
+				Array.isArray(error.response.data.errors)
+			) {
+				errorMessage = error.response.data.errors
+					.map((e) => e.message)
+					.join(", ");
+			}
+
+			setServerError(errorMessage);
 		} finally {
 			setIsLoading(false);
 		}
@@ -48,8 +70,8 @@ export default function CreateTaskDialog({
 
 	const handleClose = () => {
 		if (!isLoading) {
-			setTitle("");
-			setDescription("");
+			reset();
+			setServerError("");
 			onClose();
 		}
 	};
@@ -61,7 +83,7 @@ export default function CreateTaskDialog({
 					<DialogTitle>Nueva Tarea</DialogTitle>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit}>
+				<form onSubmit={handleSubmit(onSubmitForm)}>
 					<div className="grid gap-4 py-4">
 						<div className="grid gap-2">
 							<FieldLabel htmlFor="title">
@@ -69,12 +91,16 @@ export default function CreateTaskDialog({
 							</FieldLabel>
 							<Input
 								id="title"
-								value={title}
-								onChange={(e) => setTitle(e.target.value)}
+								{...register("title")}
 								placeholder="Ingresa el título de la tarea"
-								required
 								disabled={isLoading}
+								aria-invalid={!!errors.title}
 							/>
+							{errors.title && (
+								<p className="text-sm text-red-500 mt-1">
+									{errors.title.message}
+								</p>
+							)}
 						</div>
 
 						<div className="grid gap-2">
@@ -83,13 +109,24 @@ export default function CreateTaskDialog({
 							</FieldLabel>
 							<Textarea
 								id="description"
-								value={description}
-								onChange={(e) => setDescription(e.target.value)}
+								{...register("description")}
 								placeholder="Ingresa la descripción (opcional)"
 								rows={4}
 								disabled={isLoading}
+								aria-invalid={!!errors.description}
 							/>
+							{errors.description && (
+								<p className="text-sm text-red-500 mt-1">
+									{errors.description.message}
+								</p>
+							)}
 						</div>
+
+						{serverError && (
+							<div className="text-sm text-red-500 text-center p-2 bg-red-50 rounded">
+								{serverError}
+							</div>
+						)}
 					</div>
 
 					<DialogFooter>
@@ -101,10 +138,7 @@ export default function CreateTaskDialog({
 						>
 							Cancelar
 						</Button>
-						<Button
-							type="submit"
-							disabled={isLoading || !title.trim()}
-						>
+						<Button type="submit" disabled={isLoading || !isValid}>
 							{isLoading ? "Creando..." : "Crear Tarea"}
 						</Button>
 					</DialogFooter>

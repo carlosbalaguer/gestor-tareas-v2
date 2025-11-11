@@ -11,7 +11,7 @@ interface Task {
 	id: string;
 	title: string;
 	description?: string;
-	status: "todo" | "in-progress" | "done";
+	status: "todo" | "in_progress" | "done";
 }
 
 export default function Dashboard() {
@@ -48,16 +48,16 @@ export default function Dashboard() {
 		e.preventDefault();
 	};
 
-	const handleDrop = async (newStatus: "todo" | "in-progress" | "done") => {
+	const handleDrop = async (newStatus: "todo" | "in_progress" | "done") => {
 		if (!draggedTask) return;
 
 		try {
-			await updateTask(
-				draggedTask.id,
-				draggedTask.title,
-				draggedTask.description,
-				newStatus
-			);
+		await updateTask(
+			draggedTask.id,
+			undefined,
+			undefined,
+			newStatus
+		);
 			setTasks((prevTasks) =>
 				prevTasks.map((task) =>
 					task.id === draggedTask.id
@@ -90,16 +90,16 @@ export default function Dashboard() {
 		}
 	};
 
-	const getTasksByStatus = (status: "todo" | "in-progress" | "done") => {
+	const getTasksByStatus = (status: "todo" | "in_progress" | "done") => {
 		return Object.values(tasks).filter((task) => task.status === status);
 	};
 
 	const columns = [
 		{ id: "todo", title: "Por hacer", status: "todo" as const },
 		{
-			id: "in-progress",
+			id: "in_progress",
 			title: "En progreso",
-			status: "in-progress" as const,
+			status: "in_progress" as const,
 		},
 		{ id: "done", title: "Completado", status: "done" as const },
 	];
