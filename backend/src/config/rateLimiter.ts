@@ -35,3 +35,38 @@ export const generalLimiter = rateLimit({
 		});
 	},
 });
+
+export const authLimiter = rateLimit({
+	windowMs: 60 * 1000,
+	max: 5,
+	message: {
+		success: false,
+		errors: [
+			{
+				field: "general",
+				message:
+					"Demasiados intentos de inicio de sesión. Por favor, intenta de nuevo en 1 minuto.",
+			},
+		],
+	},
+	standardHeaders: true,
+	legacyHeaders: false,
+	skip: (req) => process.env.NODE_ENV === "test",
+	handler: (req, res) => {
+		logger.warn("Auth rate limit exceeded", {
+			ip: req.ip,
+			path: req.path,
+			userAgent: req.get("user-agent"),
+		});
+		res.status(429).json({
+			success: false,
+			errors: [
+				{
+					field: "general",
+					message:
+						"Demasiados intentos de inicio de sesión. Por favor, intenta de nuevo en 1 minuto.",
+				},
+			],
+		});
+	},
+});
