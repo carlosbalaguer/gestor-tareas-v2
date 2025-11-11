@@ -179,7 +179,7 @@ describe("Tests de Tasks", () => {
 					"Authorization",
 					`Bearer ${otherUserResponse.body.data.token}`
 				)
-				.expect(500);
+				.expect(404);
 
 			expect(response.body.success).toBe(false);
 		});
@@ -256,7 +256,7 @@ describe("Tests de Tasks", () => {
 				.send({
 					title: "Intento de actualizar",
 				})
-				.expect(500);
+				.expect(404);
 
 			expect(response.body.success).toBe(false);
 		});
@@ -291,7 +291,7 @@ describe("Tests de Tasks", () => {
 			await request(app)
 				.get(`/api/tasks/${taskId}`)
 				.set("Authorization", `Bearer ${authToken}`)
-				.expect(500);
+				.expect(404);
 		});
 
 		it("debe rechazar eliminar sin autenticación", async () => {
@@ -316,7 +316,7 @@ describe("Tests de Tasks", () => {
 					"Authorization",
 					`Bearer ${otherUserResponse.body.data.token}`
 				)
-				.expect(500);
+				.expect(404);
 
 			expect(response.body.success).toBe(false);
 		});
@@ -365,7 +365,7 @@ describe("Tests de Tasks", () => {
 			await request(app)
 				.get(`/api/tasks/${taskId}`)
 				.set("Authorization", `Bearer ${authToken}`)
-				.expect(500);
+				.expect(404);
 		});
 	});
 });

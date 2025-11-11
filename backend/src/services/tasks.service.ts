@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import createHttpError from "http-errors";
 
 export class TasksService {
 	private prisma: PrismaClient;
@@ -8,8 +9,6 @@ export class TasksService {
 	}
 
 	async getTasksByUserId(userId: string) {
-		if (!userId) throw new Error("User ID es obligatorio");
-
 		const tasks = await this.prisma.task.findMany({
 			where: { userId },
 		});
@@ -18,15 +17,12 @@ export class TasksService {
 	}
 
 	async getTaskById(taskId: number, userId: string) {
-		if (!taskId) throw new Error("Task ID es obligatorio");
-		if (!userId) throw new Error("User ID es obligatorio");
-
 		const task = await this.prisma.task.findUnique({
 			where: { id: taskId },
 		});
 
 		if (!task || task.userId !== userId)
-			throw new Error("Tarea no encontrada o no autorizada");
+			throw createHttpError(404, "Tarea no encontrada o no autorizada");
 
 		return task;
 	}
@@ -36,9 +32,6 @@ export class TasksService {
 		title: string,
 		description: string | null
 	) {
-		if (!userId) throw new Error("User ID es obligatorio");
-		if (!title) throw new Error("El título es obligatorio");
-
 		const task = await this.prisma.task.create({
 			data: {
 				userId,
@@ -51,15 +44,12 @@ export class TasksService {
 	}
 
 	async deleteTask(taskId: number, userId: string) {
-		if (!taskId) throw new Error("Task ID es obligatorio");
-		if (!userId) throw new Error("User ID es obligatorio");
-
 		const task = await this.prisma.task.findUnique({
 			where: { id: taskId },
 		});
 
 		if (!task || task.userId !== userId)
-			throw new Error("Tarea no encontrada o no autorizada");
+			throw createHttpError(404, "Tarea no encontrada o no autorizada");
 
 		await this.prisma.task.delete({
 			where: { id: taskId },
@@ -75,15 +65,12 @@ export class TasksService {
 		status?: string,
 		description?: string
 	) {
-		if (!taskId) throw new Error("Task ID es obligatorio");
-		if (!userId) throw new Error("User ID es obligatorio");
-
 		const task = await this.prisma.task.findUnique({
 			where: { id: taskId },
 		});
 
 		if (!task || task.userId !== userId)
-			throw new Error("Tarea no encontrada o no autorizada");
+			throw createHttpError(404, "Tarea no encontrada o no autorizada");
 
 		const updateData: any = {};
 		if (title !== undefined) updateData.title = title;

@@ -36,7 +36,7 @@ describe("Tests de autenticación", () => {
 					email,
 					password: "Asdf1234",
 				})
-				.expect(500);
+				.expect(400);
 
 			expect(response.body.success).toBe(false);
 		});
@@ -109,7 +109,7 @@ describe("Tests de autenticación", () => {
 					email: `noexiste-${Date.now()}@ejemplo.com`,
 					password: "Asdf1234",
 				})
-				.expect(500);
+				.expect(400);
 
 			expect(response.body.success).toBe(false);
 		});
@@ -121,7 +121,7 @@ describe("Tests de autenticación", () => {
 					email: testEmail,
 					password: "XXXXXXXX",
 				})
-				.expect(500);
+				.expect(400);
 
 			expect(response.body.success).toBe(false);
 		});

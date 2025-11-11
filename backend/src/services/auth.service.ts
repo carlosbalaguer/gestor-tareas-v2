@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
+import createHttpError from "http-errors";
 import jwt from "jsonwebtoken";
 
 export class AuthService {
@@ -14,14 +15,12 @@ export class AuthService {
 	}
 
 	async register(email: string, password: string) {
-		if (!email || !password)
-			throw new Error("Email y contraseña son obligatorios");
-
 		const existingUser = await this.prisma.user.findUnique({
 			where: { email },
 		});
 
-		if (existingUser) throw new Error("El usuario ya existe");
+		if (existingUser)
+			throw createHttpError(400, "El email ya está registrado");
 
 		const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -46,18 +45,16 @@ export class AuthService {
 	}
 
 	async login(email: string, password: string) {
-		if (!email || !password)
-			throw new Error("Email y contraseña son obligatorios");
-
 		const user = await this.prisma.user.findUnique({
 			where: { email },
 		});
 
-		if (!user) throw new Error("Credenciales inválidas");
+		if (!user) throw createHttpError(400, "Credenciales inválidas");
 
 		const isPasswordValid = await bcrypt.compare(password, user.password);
 
-		if (!isPasswordValid) throw new Error("Credenciales inválidas");
+		if (!isPasswordValid)
+			throw createHttpError(400, "Credenciales inválidas");
 
 		const token = jwt.sign({ userId: user.id }, this.JWT_SECRET, {
 			expiresIn: "7d",
