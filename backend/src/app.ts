@@ -1,6 +1,7 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
+import { generalLimiter } from "./config/rateLimiter.js";
 import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 import routes from "./routes/index.js";
 
@@ -10,6 +11,8 @@ const allowedOrigins = process.env.CORS_ORIGINS?.split(",") || [];
 
 export const createApp = () => {
 	const app = express();
+
+	app.set("trust proxy", 1);
 
 	if (process.env.NODE_ENV === "test") {
 		app.use(cors());
@@ -30,9 +33,13 @@ export const createApp = () => {
 			})
 		);
 	}
+	app.use(generalLimiter);
+
 	app.use(express.json());
 	app.use(express.urlencoded({ extended: true }));
+
 	app.use("/api", routes);
+
 	app.use(errorHandler);
 
 	return app;
