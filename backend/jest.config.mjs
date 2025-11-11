@@ -6,7 +6,7 @@ const tsJestTransformCfg = createDefaultPreset().transform;
 export default {
 	testEnvironment: "node",
 	preset: "ts-jest/presets/default-esm",
-
+	testMatch: ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
 	moduleNameMapper: {
 		"^(\\.{1,2}/.*)\\.js$": "$1", // Mapea .js a .ts
 	},

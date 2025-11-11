@@ -14,13 +14,7 @@ export class TasksController {
 		next: NextFunction
 	) => {
 		try {
-			const userId = req.user?.id;
-
-			if (!userId)
-				return res.status(400).json({
-					success: false,
-					error: "User ID es obligatorio",
-				});
+			const userId = req.user!.id;
 
 			const tasks = await this.tasksService.getTasksByUserId(userId);
 			res.status(200).json({ success: true, data: tasks });
@@ -32,18 +26,7 @@ export class TasksController {
 	getTaskById = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const taskId = Number(req.params.taskId);
-			const userId = req.user?.id;
-
-			if (!taskId)
-				return res.status(400).json({
-					success: false,
-					error: "Task ID es obligatorio",
-				});
-			if (!userId)
-				return res.status(400).json({
-					success: false,
-					error: "User ID es obligatorio",
-				});
+			const userId = req.user!.id;
 
 			const task = await this.tasksService.getTaskById(taskId, userId);
 			res.status(200).json({ success: true, data: task });
@@ -54,19 +37,8 @@ export class TasksController {
 
 	createTask = async (req: Request, res: Response, next: NextFunction) => {
 		try {
-			const userId = req.user?.id;
+			const userId = req.user!.id;
 			const { title, description } = req.body;
-
-			if (!userId)
-				return res.status(400).json({
-					success: false,
-					error: "User ID es obligatorio",
-				});
-			if (!title)
-				return res.status(400).json({
-					success: false,
-					error: "El título es obligatorio",
-				});
 
 			const task = await this.tasksService.createTask(
 				userId,
@@ -82,31 +54,15 @@ export class TasksController {
 	updateTask = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const taskId = Number(req.params.taskId);
-			const userId = req.user?.id;
+			const userId = req.user!.id;
 			const { title, description, status } = req.body;
-
-			if (!taskId)
-				return res.status(400).json({
-					success: false,
-					error: "Task ID es obligatorio",
-				});
-			if (!userId)
-				return res.status(400).json({
-					success: false,
-					error: "User ID es obligatorio",
-				});
-			if (!title)
-				return res.status(400).json({
-					success: false,
-					error: "El título es obligatorio",
-				});
 
 			const task = await this.tasksService.updateTask(
 				taskId,
 				userId,
 				title,
 				status,
-				description || null
+				description
 			);
 			res.status(200).json({ success: true, data: task });
 		} catch (error) {
@@ -117,18 +73,7 @@ export class TasksController {
 	deleteTask = async (req: Request, res: Response, next: NextFunction) => {
 		try {
 			const taskId = Number(req.params.taskId);
-			const userId = req.user?.id;
-
-			if (!taskId)
-				return res.status(400).json({
-					success: false,
-					error: "Task ID es obligatorio",
-				});
-			if (!userId)
-				return res.status(400).json({
-					success: false,
-					error: "User ID es obligatorio",
-				});
+			const userId = req.user!.id;
 
 			const result = await this.tasksService.deleteTask(taskId, userId);
 			res.status(200).json({ success: true, data: result });

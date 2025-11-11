@@ -71,13 +71,12 @@ export class TasksService {
 	async updateTask(
 		taskId: number,
 		userId: string,
-		title: string,
-		status: string,
-		description: string | null
+		title?: string,
+		status?: string,
+		description?: string
 	) {
 		if (!taskId) throw new Error("Task ID es obligatorio");
 		if (!userId) throw new Error("User ID es obligatorio");
-		if (!title) throw new Error("El título es obligatorio");
 
 		const task = await this.prisma.task.findUnique({
 			where: { id: taskId },
@@ -86,13 +85,14 @@ export class TasksService {
 		if (!task || task.userId !== userId)
 			throw new Error("Tarea no encontrada o no autorizada");
 
+		const updateData: any = {};
+		if (title !== undefined) updateData.title = title;
+		if (description !== undefined) updateData.description = description;
+		if (status !== undefined) updateData.status = status;
+
 		const updatedTask = await this.prisma.task.update({
 			where: { id: taskId },
-			data: {
-				title,
-				description,
-				status,
-			},
+			data: updateData,
 		});
 
 		return updatedTask;

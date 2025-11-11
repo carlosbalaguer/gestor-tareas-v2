@@ -19,7 +19,7 @@ model Task {
   id          Int      @id @default(autoincrement())
   title       String
   description String?
-  status      String   @default("todo") // "todo", "in-progress", "completed"
+  status      String   @default("todo") // "todo", "in-progress", "done"
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
