@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import logger from "../utils/logger.js";
 
 declare global {
 	namespace Express {
@@ -19,11 +20,13 @@ export const authMiddleware = async (
 	try {
 		const token = req.headers.authorization?.replace("Bearer ", "");
 
-		if (!token)
+		if (!token) {
+			logger.warn("Authentication token not provided");
 			return res.status(401).json({
 				success: false,
 				error: "Token de autenticación no proporcionado",
 			});
+		}
 
 		if (!process.env.JWT_SECRET) {
 			throw new Error("JWT_SECRET is not configured");

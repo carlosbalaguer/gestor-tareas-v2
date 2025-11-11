@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import createHttpError from "http-errors";
 import jwt from "jsonwebtoken";
+import logger from "../utils/logger.js";
 
 export class AuthService {
 	private prisma: PrismaClient;
@@ -15,12 +16,15 @@ export class AuthService {
 	}
 
 	async register(email: string, password: string) {
+		logger.info("Registration attempt", { email });
 		const existingUser = await this.prisma.user.findUnique({
 			where: { email },
 		});
 
-		if (existingUser)
+		if (existingUser) {
+			logger.warn("User already exists", { email });
 			throw createHttpError(400, "El email ya está registrado");
+		}
 
 		const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -29,6 +33,11 @@ export class AuthService {
 				email,
 				password: hashedPassword,
 			},
+		});
+
+		logger.info("User registered successfully", {
+			userId: user.id,
+			email: user.email,
 		});
 
 		const token = jwt.sign({ userId: user.id }, this.JWT_SECRET, {
@@ -45,16 +54,27 @@ export class AuthService {
 	}
 
 	async login(email: string, password: string) {
+		logger.info("Login attempt", { email });
 		const user = await this.prisma.user.findUnique({
 			where: { email },
 		});
 
-		if (!user) throw createHttpError(400, "Credenciales inválidas");
+		if (!user) {
+			logger.warn("Login failed: user not found", { email });
+			throw createHttpError(400, "Credenciales inválidas");
+		}
 
 		const isPasswordValid = await bcrypt.compare(password, user.password);
 
-		if (!isPasswordValid)
+		if (!isPasswordValid) {
+			logger.warn("Login failed: invalid password", { email });
 			throw createHttpError(400, "Credenciales inválidas");
+		}
+
+		logger.info("User logged in successfully", {
+			userId: user.id,
+			email: user.email,
+		});
 
 		const token = jwt.sign({ userId: user.id }, this.JWT_SECRET, {
 			expiresIn: "7d",
