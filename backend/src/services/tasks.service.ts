@@ -1,17 +1,11 @@
-import { PrismaClient } from "@prisma/client";
 import createHttpError from "http-errors";
+import { prisma } from "../db/prisma.js";
 import logger from "../utils/logger.js";
 
 export class TasksService {
-	private prisma: PrismaClient;
-
-	constructor() {
-		this.prisma = new PrismaClient();
-	}
-
 	async getTasksByUserId(userId: string) {
 		logger.info("Fetching tasks for user", { userId });
-		const tasks = await this.prisma.task.findMany({
+		const tasks = await prisma.task.findMany({
 			where: { userId },
 		});
 
@@ -24,7 +18,7 @@ export class TasksService {
 
 	async getTaskById(taskId: number, userId: string) {
 		logger.info("Fetching task by ID", { taskId, userId });
-		const task = await this.prisma.task.findUnique({
+		const task = await prisma.task.findUnique({
 			where: { id: taskId },
 		});
 
@@ -46,7 +40,7 @@ export class TasksService {
 		description: string | null
 	) {
 		logger.info("Creating task", { title, userId });
-		const task = await this.prisma.task.create({
+		const task = await prisma.task.create({
 			data: {
 				userId,
 				title,
@@ -60,7 +54,7 @@ export class TasksService {
 
 	async deleteTask(taskId: number, userId: string) {
 		logger.info("Deleting task", { taskId, userId });
-		const task = await this.prisma.task.findUnique({
+		const task = await prisma.task.findUnique({
 			where: { id: taskId },
 		});
 
@@ -72,7 +66,7 @@ export class TasksService {
 			throw createHttpError(404, "Tarea no encontrada o no autorizada");
 		}
 
-		await this.prisma.task.delete({
+		await prisma.task.delete({
 			where: { id: taskId },
 		});
 
@@ -88,7 +82,7 @@ export class TasksService {
 		description?: string
 	) {
 		logger.info("Updating task", { taskId, userId });
-		const task = await this.prisma.task.findUnique({
+		const task = await prisma.task.findUnique({
 			where: { id: taskId },
 		});
 
@@ -105,7 +99,7 @@ export class TasksService {
 		if (description !== undefined) updateData.description = description;
 		if (status !== undefined) updateData.status = status;
 
-		const updatedTask = await this.prisma.task.update({
+		const updatedTask = await prisma.task.update({
 			where: { id: taskId },
 			data: updateData,
 		});

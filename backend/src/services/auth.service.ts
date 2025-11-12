@@ -1,15 +1,13 @@
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import createHttpError from "http-errors";
 import jwt from "jsonwebtoken";
+import { prisma } from "../db/prisma.js";
 import logger from "../utils/logger.js";
 
 export class AuthService {
-	private prisma: PrismaClient;
 	private JWT_SECRET: string;
 
 	constructor() {
-		this.prisma = new PrismaClient();
 		this.JWT_SECRET = process.env.JWT_SECRET!;
 
 		if (!this.JWT_SECRET) throw new Error("JWT_SECRET no está configurado");
@@ -17,7 +15,7 @@ export class AuthService {
 
 	async register(email: string, password: string) {
 		logger.info("Registration attempt", { email });
-		const existingUser = await this.prisma.user.findUnique({
+		const existingUser = await prisma.user.findUnique({
 			where: { email },
 		});
 
@@ -28,7 +26,7 @@ export class AuthService {
 
 		const hashedPassword = await bcrypt.hash(password, 10);
 
-		const user = await this.prisma.user.create({
+		const user = await prisma.user.create({
 			data: {
 				email,
 				password: hashedPassword,
@@ -55,7 +53,7 @@ export class AuthService {
 
 	async login(email: string, password: string) {
 		logger.info("Login attempt", { email });
-		const user = await this.prisma.user.findUnique({
+		const user = await prisma.user.findUnique({
 			where: { email },
 		});
 
