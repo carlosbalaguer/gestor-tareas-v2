@@ -134,7 +134,7 @@ export default function Dashboard() {
 
 	if (isLoading) {
 		return (
-			<section className="min-h-screen px-8 flex items-center justify-center">
+			<section className="min-h-screen px-4 sm:px-8 flex items-center justify-center">
 				<div className="text-center">
 					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
 					<p className="text-gray-600">Cargando tareas...</p>
@@ -145,7 +145,7 @@ export default function Dashboard() {
 
 	if (error) {
 		return (
-			<section className="min-h-screen px-8 flex items-center justify-center">
+			<section className="min-h-screen px-4 sm:px-8 flex items-center justify-center">
 				<div className="text-center">
 					<p className="text-red-600 mb-4">
 						Error al cargar las tareas
@@ -159,33 +159,45 @@ export default function Dashboard() {
 	}
 
 	return (
-		<section suppressHydrationWarning className="min-h-screen px-8">
+		<section
+			suppressHydrationWarning
+			className="min-h-screen px-4 sm:px-6 lg:px-8"
+		>
 			<div className="max-w-7xl mx-auto">
-				<div className="flex justify-between items-center pt-8 mb-8">
-					<h1 className="text-3xl font-bold">Kanban Dashboard</h1>
+				<div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pt-6 sm:pt-8 mb-6 sm:mb-8">
+					<h1 className="text-2xl sm:text-3xl font-bold">
+						Kanban Dashboard
+					</h1>
 					<div className="flex gap-3">
-						<Button onClick={() => setIsModalOpen(true)}>
+						<Button
+							onClick={() => setIsModalOpen(true)}
+							className="flex-1 sm:flex-none"
+						>
 							Nueva Tarea
 						</Button>
-						<Button onClick={logoutUser} variant="outline">
+						<Button
+							onClick={logoutUser}
+							variant="outline"
+							className="flex-1 sm:flex-none"
+						>
 							Cerrar sesión
 						</Button>
 					</div>
 				</div>
 
-				<div className="grid grid-cols-3 gap-6">
+				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
 					{columns.map((column) => (
 						<div
 							key={column.id}
-							className="rounded-lg border p-4"
+							className="rounded-lg border p-3 sm:p-4"
 							onDragOver={handleDragOver}
 							onDrop={() => handleDrop(column.status)}
 						>
-							<h2 className="text-xl font-semibold mb-4">
+							<h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
 								{column.title}
 							</h2>
 
-							<div className="space-y-3 min-h-[400px]">
+							<div className="space-y-3 min-h-[200px] sm:min-h-[400px]">
 								{getTasksByStatus(column.status).map((task) => (
 									<div
 										key={task.id}
@@ -193,29 +205,33 @@ export default function Dashboard() {
 										onDragStart={() =>
 											handleDragStart(task)
 										}
-										className="bg-gray-50 p-4 rounded-lg border relative"
+										className="bg-gray-50 p-3 sm:p-4 rounded-lg border relative cursor-move active:opacity-50"
 									>
 										<button
 											onClick={() =>
 												handleDeleteTask(task.id)
 											}
-											className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+											className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 text-lg leading-none"
 										>
 											×
 										</button>
-										<h3 className="font-semibold mb-2">
+										<h3 className="font-semibold mb-2 pr-8 text-sm sm:text-base">
 											{task.title}
 										</h3>
 										{task.description && (
-											<p className="text-sm">
+											<p className="text-xs sm:text-sm text-gray-600">
 												{task.description}
 											</p>
 										)}
 									</div>
 								))}
 
-								{getTasksByStatus(column.status).length === 0 &&
-									null}
+								{getTasksByStatus(column.status).length ===
+									0 && (
+									<div className="text-center text-gray-400 py-8 text-sm">
+										No hay tareas
+									</div>
+								)}
 							</div>
 						</div>
 					))}
