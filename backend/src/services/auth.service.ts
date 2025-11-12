@@ -1,8 +1,12 @@
 import bcrypt from "bcrypt";
 import createHttpError from "http-errors";
-import jwt from "jsonwebtoken";
 import { prisma } from "../db/prisma.js";
 import logger from "../utils/logger.js";
+import {
+	generateAccessToken,
+	generateRefreshToken,
+	verifyRefreshToken,
+} from "../utils/tokens.js";
 
 export class AuthService {
 	private JWT_SECRET: string;
@@ -38,16 +42,16 @@ export class AuthService {
 			email: user.email,
 		});
 
-		const token = jwt.sign({ userId: user.id }, this.JWT_SECRET, {
-			expiresIn: "7d",
-		});
+		const accessToken = generateAccessToken(user.id);
+		const refreshToken = generateRefreshToken(user.id);
 
 		return {
 			user: {
 				id: user.id,
 				email: user.email,
 			},
-			token,
+			accessToken,
+			refreshToken,
 		};
 	}
 
@@ -74,16 +78,43 @@ export class AuthService {
 			email: user.email,
 		});
 
-		const token = jwt.sign({ userId: user.id }, this.JWT_SECRET, {
-			expiresIn: "7d",
-		});
+		const accessToken = generateAccessToken(user.id);
+		const refreshToken = generateRefreshToken(user.id);
 
 		return {
 			user: {
 				id: user.id,
 				email: user.email,
 			},
-			token,
+			accessToken,
+			refreshToken,
 		};
+	}
+
+	async refreshAccessToken(refreshToken: string) {
+		logger.info("Refresh token attempt");
+
+		try {
+			const payload = verifyRefreshToken(refreshToken);
+
+			const user = await prisma.user.findUnique({
+				where: { id: payload.userId },
+			});
+
+			if (!user) {
+				throw createHttpError(401, "Usuario no encontrado");
+			}
+
+			const newAccessToken = generateAccessToken(user.id);
+
+			logger.info("Access token refreshed", { userId: user.id });
+
+			return {
+				accessToken: newAccessToken,
+			};
+		} catch (error) {
+			logger.warn("Refresh token failed", { error });
+			throw createHttpError(401, "Refresh token inválido");
+		}
 	}
 }

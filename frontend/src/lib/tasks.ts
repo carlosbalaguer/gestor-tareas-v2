@@ -1,6 +1,5 @@
 import { Task } from "@/types";
 import api from "./api";
-import { getAuthToken } from "./auth";
 
 export const getTasks = async () => {
 	try {

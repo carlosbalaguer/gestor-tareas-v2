@@ -1,6 +1,6 @@
 "use client";
 
-import { getAuthToken, logout } from "@/lib/auth";
+import { logout } from "@/lib/auth";
 import { createTask, deleteTask, getTasks, updateTask } from "@/lib/tasks";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -21,13 +21,6 @@ export default function Dashboard() {
 	const [isModalOpen, setIsModalOpen] = useState(false);
 
 	useEffect(() => {
-		const token = getAuthToken();
-		if (!token) {
-			router.push("/login");
-		}
-	}, [router]);
-
-	useEffect(() => {
 		const fetchTasks = async () => {
 			const response = await getTasks();
 			setTasks(response);
@@ -35,9 +28,14 @@ export default function Dashboard() {
 		fetchTasks();
 	}, []);
 
-	const logoutUser = () => {
-		logout();
-		router.push("/");
+	const logoutUser = async () => {
+		try {
+			await logout();
+			router.push("/login");
+		} catch (error) {
+			console.error("Error al hacer logout:", error);
+			router.push("/login");
+		}
 	};
 
 	const handleDragStart = (task: Task) => {
@@ -52,12 +50,7 @@ export default function Dashboard() {
 		if (!draggedTask) return;
 
 		try {
-		await updateTask(
-			draggedTask.id,
-			undefined,
-			undefined,
-			newStatus
-		);
+			await updateTask(draggedTask.id, undefined, undefined, newStatus);
 			setTasks((prevTasks) =>
 				prevTasks.map((task) =>
 					task.id === draggedTask.id

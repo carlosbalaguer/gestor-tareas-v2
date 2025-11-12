@@ -4,8 +4,14 @@ import { createApp } from "../../src/app.js";
 
 const app = createApp();
 
+const getCookies = (response: request.Response): string[] => {
+	const setCookie = response.headers["set-cookie"];
+	if (!setCookie) return [];
+	return Array.isArray(setCookie) ? setCookie : [setCookie];
+};
+
 describe("Tests de Tasks", () => {
-	let authToken: string;
+	let cookies: string[];
 	let userId: string;
 
 	beforeEach(async () => {
@@ -16,7 +22,7 @@ describe("Tests de Tasks", () => {
 				password: "Asdf1234",
 			});
 
-		authToken = response.body.data?.token;
+		cookies = getCookies(response);
 		userId = response.body.data?.user?.id;
 	});
 
@@ -24,7 +30,7 @@ describe("Tests de Tasks", () => {
 		it("debe crear una tarea correctamente", async () => {
 			const response = await request(app)
 				.post("/api/tasks")
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.send({
 					title: "Nueva tarea",
 					description: "Descripción de prueba",
@@ -54,7 +60,7 @@ describe("Tests de Tasks", () => {
 		it("debe rechazar crear tarea sin título", async () => {
 			const response = await request(app)
 				.post("/api/tasks")
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.send({
 					description: "Solo descripción",
 				})
@@ -66,7 +72,7 @@ describe("Tests de Tasks", () => {
 		it("debe crear tarea sin descripción", async () => {
 			const response = await request(app)
 				.post("/api/tasks")
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.send({
 					title: "Solo título",
 				})
@@ -82,19 +88,19 @@ describe("Tests de Tasks", () => {
 		beforeEach(async () => {
 			await request(app)
 				.post("/api/tasks")
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.send({ title: "Tarea 1", description: "Desc 1" });
 
 			await request(app)
 				.post("/api/tasks")
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.send({ title: "Tarea 2", description: "Desc 2" });
 		});
 
 		it("debe listar todas las tareas del usuario", async () => {
 			const response = await request(app)
 				.get("/api/tasks")
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.expect(200);
 
 			expect(response.body.success).toBe(true);
@@ -116,16 +122,16 @@ describe("Tests de Tasks", () => {
 					password: "Asdf1234",
 				});
 
-			const otherUserToken = otherUserResponse.body.data.token;
+			const otherUserCookies = getCookies(otherUserResponse);
 
 			await request(app)
 				.post("/api/tasks")
-				.set("Authorization", `Bearer ${otherUserToken}`)
+				.set("Cookie", otherUserCookies)
 				.send({ title: "Tarea de otro usuario" });
 
 			const response = await request(app)
 				.get("/api/tasks")
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.expect(200);
 
 			expect(
@@ -140,7 +146,7 @@ describe("Tests de Tasks", () => {
 		beforeEach(async () => {
 			const createResponse = await request(app)
 				.post("/api/tasks")
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.send({ title: "Tarea específica", description: "Desc" });
 
 			taskId = createResponse.body.data.id;
@@ -149,7 +155,7 @@ describe("Tests de Tasks", () => {
 		it("debe obtener una tarea específica", async () => {
 			const response = await request(app)
 				.get(`/api/tasks/${taskId}`)
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.expect(200);
 
 			expect(response.body.success).toBe(true);
@@ -173,12 +179,11 @@ describe("Tests de Tasks", () => {
 					password: "Asdf1234",
 				});
 
+			const otherUserCookies = getCookies(otherUserResponse);
+
 			const response = await request(app)
 				.get(`/api/tasks/${taskId}`)
-				.set(
-					"Authorization",
-					`Bearer ${otherUserResponse.body.data.token}`
-				)
+				.set("Cookie", otherUserCookies)
 				.expect(404);
 
 			expect(response.body.success).toBe(false);
@@ -191,7 +196,7 @@ describe("Tests de Tasks", () => {
 		beforeEach(async () => {
 			const createResponse = await request(app)
 				.post("/api/tasks")
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.send({
 					title: "Tarea original",
 					description: "Desc original",
@@ -203,7 +208,7 @@ describe("Tests de Tasks", () => {
 		it("debe actualizar una tarea correctamente", async () => {
 			const response = await request(app)
 				.put(`/api/tasks/${taskId}`)
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.send({
 					title: "Tarea actualizada",
 					description: "Nueva descripción",
@@ -229,7 +234,7 @@ describe("Tests de Tasks", () => {
 		it("debe permitir actualizar solo la descripción", async () => {
 			const response = await request(app)
 				.put(`/api/tasks/${taskId}`)
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.send({
 					description: "Nueva descripción",
 				})
@@ -247,12 +252,11 @@ describe("Tests de Tasks", () => {
 					password: "Asdf1234",
 				});
 
+			const otherUserCookies = getCookies(otherUserResponse);
+
 			const response = await request(app)
 				.put(`/api/tasks/${taskId}`)
-				.set(
-					"Authorization",
-					`Bearer ${otherUserResponse.body.data.token}`
-				)
+				.set("Cookie", otherUserCookies)
 				.send({
 					title: "Intento de actualizar",
 				})
@@ -268,7 +272,7 @@ describe("Tests de Tasks", () => {
 		beforeEach(async () => {
 			const createResponse = await request(app)
 				.post("/api/tasks")
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.send({
 					title: "Tarea a eliminar",
 					description: "Será eliminada",
@@ -280,7 +284,7 @@ describe("Tests de Tasks", () => {
 		it("debe eliminar una tarea correctamente", async () => {
 			const response = await request(app)
 				.delete(`/api/tasks/${taskId}`)
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.expect(200);
 
 			expect(response.body.success).toBe(true);
@@ -290,7 +294,7 @@ describe("Tests de Tasks", () => {
 
 			await request(app)
 				.get(`/api/tasks/${taskId}`)
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.expect(404);
 		});
 
@@ -310,12 +314,11 @@ describe("Tests de Tasks", () => {
 					password: "Asdf1234",
 				});
 
+			const otherUserCookies = getCookies(otherUserResponse);
+
 			const response = await request(app)
 				.delete(`/api/tasks/${taskId}`)
-				.set(
-					"Authorization",
-					`Bearer ${otherUserResponse.body.data.token}`
-				)
+				.set("Cookie", otherUserCookies)
 				.expect(404);
 
 			expect(response.body.success).toBe(false);
@@ -326,7 +329,7 @@ describe("Tests de Tasks", () => {
 		it("debe permitir crear, listar, actualizar y eliminar tareas", async () => {
 			const createResponse = await request(app)
 				.post("/api/tasks")
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.send({
 					title: "Tarea de flujo",
 					description: "Prueba completa",
@@ -337,19 +340,19 @@ describe("Tests de Tasks", () => {
 
 			const listResponse = await request(app)
 				.get("/api/tasks")
-				.set("Authorization", `Bearer ${authToken}`);
+				.set("Cookie", cookies);
 
 			expect(listResponse.body.data.length).toBeGreaterThanOrEqual(1);
 
 			const getResponse = await request(app)
 				.get(`/api/tasks/${taskId}`)
-				.set("Authorization", `Bearer ${authToken}`);
+				.set("Cookie", cookies);
 
 			expect(getResponse.body.data.title).toBe("Tarea de flujo");
 
 			const updateResponse = await request(app)
 				.put(`/api/tasks/${taskId}`)
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.send({
 					title: "Tarea actualizada",
 					description: "Nueva desc",
@@ -359,12 +362,12 @@ describe("Tests de Tasks", () => {
 
 			await request(app)
 				.delete(`/api/tasks/${taskId}`)
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.expect(200);
 
 			await request(app)
 				.get(`/api/tasks/${taskId}`)
-				.set("Authorization", `Bearer ${authToken}`)
+				.set("Cookie", cookies)
 				.expect(404);
 		});
 	});

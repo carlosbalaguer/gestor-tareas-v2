@@ -15,14 +15,14 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { getAuthToken, login, setAuthToken } from "@/lib/auth";
+import { login } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { ApiError } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 export function LoginForm({
@@ -42,23 +42,13 @@ export function LoginForm({
 		mode: "onChange",
 	});
 
-	useEffect(() => {
-		const token = getAuthToken();
-		if (token) {
-			router.push("/dashboard");
-		}
-	}, [router]);
-
 	const onSubmit = async (data: LoginFormData) => {
 		setIsLoggingIn(true);
 		setServerError("");
 
 		try {
-			const response = await login(data.email, data.password);
-			if (response.data.token) {
-				setAuthToken(response.data.token);
-				router.push("/dashboard");
-			}
+			await login(data.email, data.password);
+			router.push("/dashboard");
 		} catch (error) {
 			const apiError = error as ApiError;
 

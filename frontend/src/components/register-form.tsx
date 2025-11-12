@@ -15,17 +15,13 @@ import {
 	FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import {
-	getAuthToken,
-	register as registerUser,
-	setAuthToken,
-} from "@/lib/auth";
+import { register as registerUser } from "@/lib/auth";
 import { registerSchema, type RegisterFormData } from "@/lib/validations/auth";
 import { ApiError } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
@@ -42,23 +38,13 @@ export function RegisterForm({ ...props }: React.ComponentProps<typeof Card>) {
 		mode: "onChange",
 	});
 
-	useEffect(() => {
-		const token = getAuthToken();
-		if (token) {
-			router.push("/dashboard");
-		}
-	}, [router]);
-
 	const onSubmit = async (data: RegisterFormData) => {
 		setIsRegistering(true);
 		setServerError("");
 
 		try {
-			const response = await registerUser(data.email, data.password);
-			if (response.data.token) {
-				setAuthToken(response.data.token);
-				router.push("/dashboard");
-			}
+			await registerUser(data.email, data.password);
+			router.push("/dashboard");
 		} catch (error) {
 			const apiError = error as ApiError;
 

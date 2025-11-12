@@ -4,6 +4,12 @@ import { createApp } from "../../src/app.js";
 
 const app = createApp();
 
+const getCookies = (response: request.Response): string[] => {
+	const setCookie = response.headers["set-cookie"];
+	if (!setCookie) return [];
+	return Array.isArray(setCookie) ? setCookie : [setCookie];
+};
+
 describe("Tests de autenticación", () => {
 	describe("POST /api/auth/register", () => {
 		it("debe registrar un usuario correctamente", async () => {
@@ -18,8 +24,17 @@ describe("Tests de autenticación", () => {
 				.expect(201);
 
 			expect(response.body).toHaveProperty("success", true);
-			expect(response.body.data).toHaveProperty("token");
+			expect(response.body.data).toHaveProperty("user");
 			expect(response.body.data.user).toHaveProperty("id");
+
+			const cookies = getCookies(response);
+			expect(cookies.length).toBeGreaterThan(0);
+			expect(
+				cookies.some((cookie) => cookie.includes("accessToken"))
+			).toBe(true);
+			expect(
+				cookies.some((cookie) => cookie.includes("refreshToken"))
+			).toBe(true);
 		});
 
 		it("debe rechazar email duplicado", async () => {
@@ -63,7 +78,7 @@ describe("Tests de autenticación", () => {
 			expect(response.body.success).toBe(false);
 		});
 
-		it("debe generar un token JWT válido", async () => {
+		it("debe establecer cookies httpOnly", async () => {
 			const response = await request(app)
 				.post("/api/auth/register")
 				.send({
@@ -72,8 +87,23 @@ describe("Tests de autenticación", () => {
 				})
 				.expect(201);
 
-			const token = response.body.data.token;
-			expect(token).toBeDefined();
+			const cookies = getCookies(response);
+			expect(cookies.length).toBeGreaterThan(0);
+
+			expect(
+				cookies.some(
+					(cookie) =>
+						cookie.includes("accessToken") &&
+						cookie.includes("HttpOnly")
+				)
+			).toBe(true);
+			expect(
+				cookies.some(
+					(cookie) =>
+						cookie.includes("refreshToken") &&
+						cookie.includes("HttpOnly")
+				)
+			).toBe(true);
 		});
 	});
 
@@ -98,8 +128,13 @@ describe("Tests de autenticación", () => {
 				.expect(200);
 
 			expect(response.body.success).toBe(true);
-			expect(response.body.data).toHaveProperty("token");
+			expect(response.body.data).toHaveProperty("user");
 			expect(response.body.data.user.email).toBe(testEmail);
+
+			const cookies = getCookies(response);
+			expect(
+				cookies.some((cookie) => cookie.includes("accessToken"))
+			).toBe(true);
 		});
 
 		it("debe rechazar login con email inexistente", async () => {
@@ -161,9 +196,69 @@ describe("Tests de autenticación", () => {
 				password: "Asdf1234",
 			});
 
-			expect(response1.body.data.token).not.toBe(
-				response2.body.data.token
-			);
+			const cookies1 = getCookies(response1);
+			const cookies2 = getCookies(response2);
+
+			const token1 = cookies1.find((c) => c.startsWith("accessToken="));
+			const token2 = cookies2.find((c) => c.startsWith("accessToken="));
+
+			expect(token1).not.toBe(token2);
+		});
+	});
+
+	describe("POST /api/auth/logout", () => {
+		it("debe hacer logout correctamente", async () => {
+			const email = `logout-${Date.now()}@ejemplo.com`;
+
+			const loginResponse = await request(app)
+				.post("/api/auth/register")
+				.send({ email, password: "Asdf1234" });
+
+			const cookies = getCookies(loginResponse);
+
+			const response = await request(app)
+				.post("/api/auth/logout")
+				.set("Cookie", cookies)
+				.expect(200);
+
+			expect(response.body.success).toBe(true);
+
+			const setCookies = getCookies(response);
+			expect(
+				setCookies.some((cookie) => cookie.includes("accessToken=;"))
+			).toBe(true);
+		});
+	});
+
+	describe("POST /api/auth/refresh", () => {
+		it("debe refrescar el access token correctamente", async () => {
+			const email = `refresh-${Date.now()}@ejemplo.com`;
+
+			const loginResponse = await request(app)
+				.post("/api/auth/register")
+				.send({ email, password: "Asdf1234" });
+
+			const cookies = getCookies(loginResponse);
+
+			const response = await request(app)
+				.post("/api/auth/refresh")
+				.set("Cookie", cookies)
+				.expect(200);
+
+			expect(response.body.success).toBe(true);
+
+			const newCookies = getCookies(response);
+			expect(
+				newCookies.some((cookie) => cookie.includes("accessToken"))
+			).toBe(true);
+		});
+
+		it("debe rechazar refresh sin cookie", async () => {
+			const response = await request(app)
+				.post("/api/auth/refresh")
+				.expect(401);
+
+			expect(response.body.success).toBe(false);
 		});
 	});
 
@@ -178,11 +273,11 @@ describe("Tests de autenticación", () => {
 					password: "Asdf1234",
 				});
 
-			const token = registerResponse.body.data.token;
+			const cookies = getCookies(registerResponse);
 
 			const tasksResponse = await request(app)
 				.get("/api/tasks")
-				.set("Authorization", `Bearer ${token}`)
+				.set("Cookie", cookies)
 				.expect(200);
 
 			expect(tasksResponse.body.success).toBe(true);
@@ -198,7 +293,7 @@ describe("Tests de autenticación", () => {
 		it("debe rechazar acceso con token inválido", async () => {
 			const response = await request(app)
 				.get("/api/tasks")
-				.set("Authorization", "Bearer token-invalido-fake")
+				.set('Cookie', ['accessToken=token-invalido-fake'])
 				.expect(500);
 
 			expect(response.body.success).toBe(false);

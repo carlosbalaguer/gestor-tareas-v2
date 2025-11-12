@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
+import createHttpError from "http-errors";
 import logger from "../utils/logger.js";
+import { verifyAccessToken } from "../utils/tokens.js";
 
 declare global {
 	namespace Express {
@@ -18,26 +19,17 @@ export const authMiddleware = async (
 	next: NextFunction
 ) => {
 	try {
-		const token = req.headers.authorization?.replace("Bearer ", "");
+		const token = req.cookies.accessToken;
 
 		if (!token) {
 			logger.warn("Authentication token not provided");
-			return res.status(401).json({
-				success: false,
-				error: "Token de autenticación no proporcionado",
-			});
+			throw createHttpError(401, "No autenticado");
 		}
 
-		if (!process.env.JWT_SECRET) {
-			throw new Error("JWT_SECRET is not configured");
-		}
-
-		const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-			userId: string;
-		};
+		const payload = verifyAccessToken(token);
 
 		req.user = {
-			id: decoded.userId,
+			id: payload.userId,
 		};
 
 		next();
