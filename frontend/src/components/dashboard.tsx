@@ -1,9 +1,11 @@
 "use client";
 
 import { logout } from "@/lib/auth";
+import { queryClient } from "@/lib/queryClient";
 import { createTask, deleteTask, getTasks, updateTask } from "@/lib/tasks";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import CreateTaskDialog from "./create-task";
 import { Button } from "./ui/button";
 
@@ -16,17 +18,54 @@ interface Task {
 
 export default function Dashboard() {
 	const router = useRouter();
-	const [tasks, setTasks] = useState<Task[]>([]);
 	const [draggedTask, setDraggedTask] = useState<Task | null>(null);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 
-	useEffect(() => {
-		const fetchTasks = async () => {
-			const response = await getTasks();
-			setTasks(response);
-		};
-		fetchTasks();
-	}, []);
+	const {
+		data: tasks = [],
+		isLoading,
+		error,
+	} = useQuery<Task[]>({
+		queryKey: ["tasks"],
+		queryFn: getTasks,
+	});
+
+	const createTaskMutation = useMutation({
+		mutationFn: ({
+			title,
+			description,
+		}: {
+			title: string;
+			description?: string;
+		}) => createTask(title, description || ""),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["tasks"] });
+		},
+	});
+
+	const updateTaskMutation = useMutation({
+		mutationFn: ({
+			id,
+			title,
+			description,
+			status,
+		}: {
+			id: string;
+			title?: string;
+			description?: string;
+			status?: "todo" | "in_progress" | "done";
+		}) => updateTask(id, title, description, status),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["tasks"] });
+		},
+	});
+
+	const deleteTaskMutation = useMutation({
+		mutationFn: (id: string) => deleteTask(id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["tasks"] });
+		},
+	});
 
 	const logoutUser = async () => {
 		try {
@@ -50,14 +89,10 @@ export default function Dashboard() {
 		if (!draggedTask) return;
 
 		try {
-			await updateTask(draggedTask.id, undefined, undefined, newStatus);
-			setTasks((prevTasks) =>
-				prevTasks.map((task) =>
-					task.id === draggedTask.id
-						? { ...task, status: newStatus }
-						: task
-				)
-			);
+			await updateTaskMutation.mutateAsync({
+				id: draggedTask.id,
+				status: newStatus,
+			});
 		} catch (error) {
 			alert("Error al mover la tarea");
 		} finally {
@@ -66,25 +101,25 @@ export default function Dashboard() {
 	};
 
 	const handleCreateTask = async (title: string, description: string) => {
-		const newTask = await createTask(title, description);
-		setTasks((prevTasks) => [...prevTasks, newTask]);
+		try {
+			await createTaskMutation.mutateAsync({ title, description });
+			setIsModalOpen(false);
+		} catch (error) {
+			alert("Error al crear la tarea");
+		}
 	};
 
 	const handleDeleteTask = async (taskId: string) => {
 		try {
-			if (confirm("¿Estás seguro de que deseas eliminar esta tarea?")) {
-				await deleteTask(taskId);
-				setTasks((prevTasks) =>
-					prevTasks.filter((task) => task.id !== taskId)
-				);
-			}
+			if (confirm("¿Estás seguro de que deseas eliminar esta tarea?"))
+				await deleteTaskMutation.mutateAsync(taskId);
 		} catch (error) {
 			alert("Error al eliminar la tarea");
 		}
 	};
 
 	const getTasksByStatus = (status: "todo" | "in_progress" | "done") => {
-		return Object.values(tasks).filter((task) => task.status === status);
+		return tasks.filter((task) => task.status === status);
 	};
 
 	const columns = [
@@ -97,8 +132,30 @@ export default function Dashboard() {
 		{ id: "done", title: "Completado", status: "done" as const },
 	];
 
-	{
-		/** Se ha usado IA en este componente para desarrollar una UI más adecuada */
+	if (isLoading) {
+		return (
+			<section className="min-h-screen px-8 flex items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+					<p className="text-gray-600">Cargando tareas...</p>
+				</div>
+			</section>
+		);
+	}
+
+	if (error) {
+		return (
+			<section className="min-h-screen px-8 flex items-center justify-center">
+				<div className="text-center">
+					<p className="text-red-600 mb-4">
+						Error al cargar las tareas
+					</p>
+					<Button onClick={() => window.location.reload()}>
+						Reintentar
+					</Button>
+				</div>
+			</section>
+		);
 	}
 
 	return (
